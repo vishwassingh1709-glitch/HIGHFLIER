@@ -1,0 +1,2646 @@
+{
+  "info": {
+    "name": "HIGHFLIER Backend API",
+    "description": "Postman collection generated from the OpenAPI document.\n\n1. Set `baseUrl` (default `http://localhost:5000/api/v1`).\n2. Run **Auth → POST /auth/login** to store `accessToken` (or set it manually).\n3. Run **Catalogue → GET /products** then **Admin → GET /admin/products** to capture a product id and SKU.\n4. Checkout and supplier requests automatically capture `orderId` and `supplierId`.\n\nAll mock supplier and mock payment responses are labelled `isMock`/`mock: true`. They are not real fulfilment or real money.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1"
+    },
+    {
+      "key": "rootUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "id",
+      "value": "665f1c2a9b1e8a0012345678"
+    },
+    {
+      "key": "productId",
+      "value": "665f1c2a9b1e8a0012345678"
+    },
+    {
+      "key": "productSlug",
+      "value": "mock-stainless-steel-cookware-set"
+    },
+    {
+      "key": "sku",
+      "value": "MOCK-HK-001-STD"
+    },
+    {
+      "key": "orderId",
+      "value": "665f1c2a9b1e8a0012345678"
+    },
+    {
+      "key": "supplierId",
+      "value": "665f1c2a9b1e8a0012345678"
+    },
+    {
+      "key": "addressId",
+      "value": "665f1c2a9b1e8a0012345678"
+    },
+    {
+      "key": "categoryId",
+      "value": "665f1c2a9b1e8a0012345678"
+    },
+    {
+      "key": "categorySlug",
+      "value": "home-kitchen"
+    },
+    {
+      "key": "brandId",
+      "value": "665f1c2a9b1e8a0012345678"
+    },
+    {
+      "key": "reviewId",
+      "value": "665f1c2a9b1e8a0012345678"
+    },
+    {
+      "key": "userId",
+      "value": "665f1c2a9b1e8a0012345678"
+    },
+    {
+      "key": "razorpayWebhookSignature",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health — Liveness probe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{rootUrl}}/health",
+            "description": "Mounted at `/health` (outside the /api/v1 prefix)."
+          }
+        },
+        {
+          "name": "GET /health/ready — Readiness probe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{rootUrl}}/health/ready",
+            "description": "Returns 503 until MongoDB is connected. Mounted at `/health/ready`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /auth/register — Register a customer account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Aarav Sharma\",\n  \"email\": \"aarav@example.com\",\n  \"password\": \"Passw0rd123\",\n  \"phone\": \"9876543210\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Register a customer account"
+          }
+        },
+        {
+          "name": "POST /auth/login — Log in and receive access/refresh tokens",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"aarav@example.com\",\n  \"password\": \"Passw0rd123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Log in and receive access/refresh tokens"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const tokens = body?.data?.tokens;",
+                  "if (tokens) {",
+                  "  pm.collectionVariables.set('accessToken', tokens.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', tokens.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/refresh — Rotate a refresh token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/refresh",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "The supplied refresh token is invalidated. Reusing an old token revokes the whole session."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body?.data?.accessToken) pm.collectionVariables.set('accessToken', body.data.accessToken);",
+                  "if (body?.data?.refreshToken) pm.collectionVariables.set('refreshToken', body.data.refreshToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/logout — Log out of one or all sessions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/logout",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\",\n  \"allDevices\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Log out of one or all sessions"
+          }
+        },
+        {
+          "name": "GET /auth/me — Get the current user from the access token",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/me",
+            "description": "Get the current user from the access token"
+          }
+        },
+        {
+          "name": "POST /auth/forgot-password — Request a password reset email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/forgot-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"aarav@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Always returns a generic message so account existence is not disclosed."
+          }
+        },
+        {
+          "name": "POST /auth/reset-password — Reset a password using an emailed token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/reset-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"replace-with-token\",\n  \"password\": \"NewPass123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Reset a password using an emailed token"
+          }
+        },
+        {
+          "name": "GET /auth/verify-email — Verify an email address",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/verify-email",
+            "description": "Verify an email address"
+          }
+        },
+        {
+          "name": "POST /auth/resend-verification — Resend the email verification link",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/resend-verification",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"aarav@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Resend the email verification link"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "GET /users/me — Get the authenticated profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me",
+            "description": "Get the authenticated profile"
+          }
+        },
+        {
+          "name": "PATCH /users/me — Update name or phone",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo User\",\n  \"phone\": \"9876543210\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update name or phone"
+          }
+        },
+        {
+          "name": "PATCH /users/me/password — Change password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me/password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"OldPassw0rd123\",\n  \"newPassword\": \"NewPassw0rd123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Revokes existing sessions after the password changes."
+          }
+        },
+        {
+          "name": "GET /users/me/addresses — List saved addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me/addresses",
+            "description": "List saved addresses"
+          }
+        },
+        {
+          "name": "POST /users/me/addresses — Add an address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me/addresses",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"_id\": \"665f1c2a9b1e8a0012345678\",\n  \"label\": \"Home\",\n  \"fullName\": \"Aarav Sharma\",\n  \"phone\": \"9876543210\",\n  \"line1\": \"12 MG Road\",\n  \"line2\": \"Near Metro Station\",\n  \"landmark\": \"Opposite City Mall\",\n  \"city\": \"Bengaluru\",\n  \"state\": \"Karnataka\",\n  \"pincode\": \"560001\",\n  \"country\": \"India\",\n  \"isDefault\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Add an address"
+          }
+        },
+        {
+          "name": "PATCH /users/me/addresses/{addressId} — Update an address",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me/addresses/{{addressId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated demo value\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update an address"
+          }
+        },
+        {
+          "name": "DELETE /users/me/addresses/{addressId} — Delete an address",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me/addresses/{{addressId}}",
+            "description": "Delete an address"
+          }
+        },
+        {
+          "name": "PATCH /users/me/addresses/{addressId}/default — Mark an address as default",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/users/me/addresses/{{addressId}}/default",
+            "description": "Mark an address as default"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalogue",
+      "item": [
+        {
+          "name": "GET /categories — List categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/categories",
+            "description": "List categories"
+          }
+        },
+        {
+          "name": "GET /categories/{slug} — Get a category by slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/categories/{{slug}}",
+            "description": "Get a category by slug"
+          }
+        },
+        {
+          "name": "GET /brands — List brands",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/brands",
+            "description": "List brands"
+          }
+        },
+        {
+          "name": "GET /brands/{slug} — Get a brand by slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/brands/{{slug}}",
+            "description": "Get a brand by slug"
+          }
+        },
+        {
+          "name": "GET /products — List purchasable products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/products?page=1&limit=20&sort=newest",
+            "description": "Only active products with an available supplier status are returned."
+          }
+        },
+        {
+          "name": "GET /products/{identifier} — Get a product by id or slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/products/{{identifier}}",
+            "description": "Get a product by id or slug"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "GET /reviews/product/{productId} — List approved reviews for a product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reviews/product/{{productId}}?page=1&limit=20&sort=newest",
+            "description": "Authentication is optional; when present, `mine` flags the caller’s review."
+          }
+        },
+        {
+          "name": "POST /reviews/product/{productId} — Create a verified-purchase review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/reviews/product/{{productId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 1,\n  \"title\": \"Demo product\",\n  \"comment\": \"Excellent quality and fast delivery.\",\n  \"images\": [\n    {\n      \"url\": \"https://example.com/image.jpg\",\n      \"publicId\": \"highflier/demo/sample\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Requires a delivered (or returned) order containing the product. One review per customer per product."
+          }
+        },
+        {
+          "name": "GET /reviews/me — List my reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/reviews/me?page=1&limit=20",
+            "description": "List my reviews"
+          }
+        },
+        {
+          "name": "PATCH /reviews/{id} — Update my review",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/reviews/{{id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Updated demo review.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update my review"
+          }
+        },
+        {
+          "name": "DELETE /reviews/{id} — Delete my review",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/reviews/{{id}}",
+            "description": "Delete my review"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "GET /cart — Get my cart (server-repriced)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/cart",
+            "description": "Get my cart (server-repriced)"
+          }
+        },
+        {
+          "name": "POST /cart — Add or merge an item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/cart",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"665f1c2a9b1e8a0012345678\",\n  \"sku\": \"{{sku}}\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Add or merge an item"
+          }
+        },
+        {
+          "name": "DELETE /cart — Clear the cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/cart",
+            "description": "Clear the cart"
+          }
+        },
+        {
+          "name": "PATCH /cart/items/{productId}/{sku} — Update item quantity (0 removes it)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/cart/items/{{productId}}/{{sku}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update item quantity (0 removes it)"
+          }
+        },
+        {
+          "name": "DELETE /cart/items/{productId}/{sku} — Remove an item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/cart/items/{{productId}}/{{sku}}",
+            "description": "Remove an item"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wishlist",
+      "item": [
+        {
+          "name": "GET /wishlist — Get my wishlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/wishlist",
+            "description": "Get my wishlist"
+          }
+        },
+        {
+          "name": "POST /wishlist — Save a product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/wishlist",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"665f1c2a9b1e8a0012345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Save a product"
+          }
+        },
+        {
+          "name": "DELETE /wishlist — Clear my wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/wishlist",
+            "description": "Clear my wishlist"
+          }
+        },
+        {
+          "name": "DELETE /wishlist/{productId} — Remove a product from the wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/wishlist/{{productId}}",
+            "description": "Remove a product from the wishlist"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "POST /orders/checkout — Place an order from the cart or explicit items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/orders/checkout",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethod\": \"cod\",\n  \"addressId\": \"{{addressId}}\",\n  \"couponCode\": \"WELCOME10\",\n  \"customerNote\": \"Demo COD order\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Totals are recalculated server-side. Stock is reserved atomically. COD is rejected when any supplier lacks COD capability. Online payments return a gateway checkout payload; COD confirms immediately and forwards supplier orders."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body?.data?.order?._id) pm.collectionVariables.set('orderId', body.data.order._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /orders — List my orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/orders?page=1&limit=20",
+            "description": "List my orders"
+          }
+        },
+        {
+          "name": "GET /orders/{id} — Get one of my orders by id or order number",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/orders/{{id}}",
+            "description": "Get one of my orders by id or order number"
+          }
+        },
+        {
+          "name": "POST /orders/{id}/cancel — Cancel my order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/orders/{{id}}/cancel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Changed my mind\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Allowed while pending payment, confirmed or processing. Stock is restored and online payments are refunded (mock refund in mock mode)."
+          }
+        },
+        {
+          "name": "POST /orders/{id}/return — Request a return for a delivered order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/orders/{{id}}/return",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Changed my mind\",\n  \"note\": \"Demo note\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "The return window is configured by RETURN_WINDOW_DAYS."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Coupons",
+      "item": [
+        {
+          "name": "POST /coupons/validate — Validate a coupon against my live cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/coupons/validate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"DEMO10\",\n  \"items\": [\n    {\n      \"productId\": \"665f1c2a9b1e8a0012345678\",\n      \"sku\": \"{{sku}}\",\n      \"quantity\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Validate a coupon against my live cart"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "GET /payments/config — Get the public payment configuration",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/payments/config",
+            "description": "Get the public payment configuration"
+          }
+        },
+        {
+          "name": "POST /payments/orders/{orderId} — Create or reuse a payment intent for my order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/payments/orders/{{orderId}}",
+            "description": "Create or reuse a payment intent for my order"
+          }
+        },
+        {
+          "name": "POST /payments/verify — Verify a payment signature and capture the order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/payments/verify",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"providerOrderId\": \"string\",\n  \"providerPaymentId\": \"string\",\n  \"signature\": \"string\",\n  \"razorpay_order_id\": \"string\",\n  \"razorpay_payment_id\": \"string\",\n  \"razorpay_signature\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Accepts either camelCase or Razorpay-style snake_case fields. The signature is HMAC-SHA256 over `orderId|paymentId`. Verification is idempotent."
+          }
+        },
+        {
+          "name": "POST /payments/mock/pay — Simulate a payment (mock mode only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/payments/mock/pay",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"665f1c2a9b1e8a0012345678\",\n  \"outcome\": \"success\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Clearly labelled mock endpoint. No real money moves."
+          }
+        },
+        {
+          "name": "GET /payments/order/{orderId} — List payments for one of my orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/payments/order/{{orderId}}",
+            "description": "List payments for one of my orders"
+          }
+        },
+        {
+          "name": "POST /payments/webhook — Razorpay webhook receiver",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Razorpay-Signature",
+                "value": "{{razorpayWebhookSignature}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/payments/webhook",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Raw-body HMAC verification using RAZORPAY_WEBHOOK_SECRET. Events are deduplicated by provider event id. Invalid signatures return 400."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "GET /admin/dashboard — Dashboard metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/dashboard",
+            "description": "Dashboard metrics"
+          }
+        },
+        {
+          "name": "GET /admin/users — List users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users?page=1&limit=20",
+            "description": "List users"
+          }
+        },
+        {
+          "name": "GET /admin/users/{id} — Get a user with lifetime value",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{id}}",
+            "description": "Get a user with lifetime value"
+          }
+        },
+        {
+          "name": "PATCH /admin/users/{id} — Update a user (role, activation, profile)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo User\",\n  \"phone\": \"9876543210\",\n  \"role\": \"customer\",\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "The last active admin cannot be demoted or deactivated. Deactivation revokes sessions."
+          }
+        },
+        {
+          "name": "POST /admin/users/{id}/revoke-sessions — Revoke all sessions for a user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/users/{{id}}/revoke-sessions",
+            "description": "Revoke all sessions for a user"
+          }
+        },
+        {
+          "name": "GET /admin/reports/sales — Daily sales report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/reports/sales",
+            "description": "Daily sales report"
+          }
+        },
+        {
+          "name": "GET /admin/reports/top-products — Top products by revenue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/reports/top-products?limit=10",
+            "description": "Top products by revenue"
+          }
+        },
+        {
+          "name": "GET /admin/reports/low-stock — Low-stock variants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/reports/low-stock?threshold=5&limit=50",
+            "description": "Low-stock variants"
+          }
+        },
+        {
+          "name": "GET /admin/reports/suppliers — Supplier performance summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/reports/suppliers",
+            "description": "Supplier performance summary"
+          }
+        },
+        {
+          "name": "GET /admin/audit-logs — List admin audit logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/audit-logs?page=1&limit=20",
+            "description": "List admin audit logs"
+          }
+        },
+        {
+          "name": "GET /admin/webhook-logs — List received webhook events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/webhook-logs?page=1&limit=20",
+            "description": "List received webhook events"
+          }
+        },
+        {
+          "name": "GET /admin/sync-logs — List supplier sync logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/sync-logs?page=1&limit=20",
+            "description": "List supplier sync logs"
+          }
+        },
+        {
+          "name": "GET /admin/categories — List categories including inactive",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/categories",
+            "description": "List categories including inactive"
+          }
+        },
+        {
+          "name": "POST /admin/categories — Create a category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/categories",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo User\",\n  \"description\": \"Demo description\",\n  \"parentCategory\": \"665f1c2a9b1e8a0012345678\",\n  \"image\": {\n    \"url\": \"https://example.com/image.jpg\",\n    \"alt\": \"string\"\n  },\n  \"isActive\": true,\n  \"sortOrder\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a category"
+          }
+        },
+        {
+          "name": "PATCH /admin/categories/{id} — Update a category",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/categories/{{id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated demo value\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update a category"
+          }
+        },
+        {
+          "name": "DELETE /admin/categories/{id} — Deactivate a category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/categories/{{id}}",
+            "description": "Deactivate a category"
+          }
+        },
+        {
+          "name": "GET /admin/brands — List brands including inactive",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/brands",
+            "description": "List brands including inactive"
+          }
+        },
+        {
+          "name": "POST /admin/brands — Create a brand",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/brands",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo User\",\n  \"description\": \"Demo description\",\n  \"logo\": {\n    \"url\": \"https://example.com/image.jpg\",\n    \"publicId\": \"highflier/demo/sample\",\n    \"alt\": \"string\"\n  },\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a brand"
+          }
+        },
+        {
+          "name": "PATCH /admin/brands/{id} — Update a brand",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/brands/{{id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated demo value\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update a brand"
+          }
+        },
+        {
+          "name": "DELETE /admin/brands/{id} — Deactivate a brand",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/brands/{{id}}",
+            "description": "Deactivate a brand"
+          }
+        },
+        {
+          "name": "GET /admin/products — List products with admin fields",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/products?page=1&limit=20",
+            "description": "List products with admin fields"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const product = body?.data?.products?.[0];",
+                  "if (product) {",
+                  "  pm.collectionVariables.set('productId', product._id);",
+                  "  pm.collectionVariables.set('productSlug', product.slug);",
+                  "  pm.collectionVariables.set('sku', product.variants?.[0]?.sku || '');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /admin/products/{id} — Get a product",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/products/{{id}}",
+            "description": "Get a product"
+          }
+        },
+        {
+          "name": "PATCH /admin/products/{id} — Update merchandising fields, pricing and variants",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/products/{{id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Demo product\",\n  \"description\": \"Demo description\",\n  \"shortDescription\": \"Demo short description\",\n  \"category\": \"665f1c2a9b1e8a0012345678\",\n  \"brand\": \"665f1c2a9b1e8a0012345678\",\n  \"status\": \"draft\",\n  \"images\": [\n    {\n      \"url\": \"https://images.example.com/product.jpg\",\n      \"publicId\": \"highflier/demo/sample\",\n      \"alt\": \"string\",\n      \"isPrimary\": true\n    }\n  ],\n  \"tags\": [\n    \"string\"\n  ],\n  \"variantPrices\": {\n    \"MOCK-HK-001-STD\": 1499\n  },\n  \"variantActive\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update merchandising fields, pricing and variants"
+          }
+        },
+        {
+          "name": "DELETE /admin/products/{id} — Discontinue a product",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/products/{{id}}",
+            "description": "Existing orders retain their immutable snapshots."
+          }
+        },
+        {
+          "name": "POST /admin/products/{id}/activate — Activate a product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/products/{{id}}/activate",
+            "description": "Activate a product"
+          }
+        },
+        {
+          "name": "POST /admin/products/{id}/deactivate — Deactivate a product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/products/{{id}}/deactivate",
+            "description": "Deactivate a product"
+          }
+        },
+        {
+          "name": "GET /admin/reviews — List reviews for moderation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/reviews?page=1&limit=20",
+            "description": "List reviews for moderation"
+          }
+        },
+        {
+          "name": "PATCH /admin/reviews/{id} — Approve or reject a review",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/reviews/{{id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"note\": \"Demo note\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Writes an audit record and recomputes the product rating."
+          }
+        },
+        {
+          "name": "DELETE /admin/reviews/{id} — Delete a review",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/reviews/{{id}}",
+            "description": "Delete a review"
+          }
+        },
+        {
+          "name": "GET /admin/orders — List all orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/orders?page=1&limit=20",
+            "description": "List all orders"
+          }
+        },
+        {
+          "name": "GET /admin/orders/{id} — Get an order with supplier orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/orders/{{id}}",
+            "description": "Get an order with supplier orders"
+          }
+        },
+        {
+          "name": "PATCH /admin/orders/{id}/status — Transition order status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/orders/{{id}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"pending_payment\",\n  \"note\": \"Demo note\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Only transitions allowed by the order state machine are accepted. Marking delivered captures COD payments."
+          }
+        },
+        {
+          "name": "PATCH /admin/orders/{id}/tracking — Set shipment tracking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/orders/{{id}}/tracking",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courier\": \"Demo Express\",\n  \"trackingNumber\": \"MOCKTRK123456\",\n  \"trackingUrl\": \"https://example.com/image.jpg\",\n  \"isMock\": true,\n  \"note\": \"Demo note\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Set shipment tracking"
+          }
+        },
+        {
+          "name": "PATCH /admin/orders/{id}/note — Set the internal admin note",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/orders/{{id}}/note",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"adminNote\": \"Internal demo note\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Set the internal admin note"
+          }
+        },
+        {
+          "name": "POST /admin/orders/{id}/refund — Refund a captured payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/orders/{{id}}/refund",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100,\n  \"reason\": \"Changed my mind\",\n  \"restock\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Partial refunds are supported. Online refunds use the gateway (mock refund in mock mode); COD refunds are manual. Optionally restocks committed items."
+          }
+        },
+        {
+          "name": "POST /admin/orders/{id}/return-decision — Approve or reject a return request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/orders/{{id}}/return-decision",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"approve\",\n  \"note\": \"Demo note\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Approve or reject a return request"
+          }
+        },
+        {
+          "name": "GET /admin/coupons — List coupons",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/coupons?page=1&limit=20",
+            "description": "List coupons"
+          }
+        },
+        {
+          "name": "POST /admin/coupons — Create a coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/coupons",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"DEMO10\",\n  \"description\": \"Demo: 10% off orders above ₹499\",\n  \"discountType\": \"percent\",\n  \"discountValue\": 10,\n  \"maxDiscount\": 200,\n  \"minOrderValue\": 499,\n  \"scope\": \"all\",\n  \"perUserLimit\": 1,\n  \"usageLimit\": 0,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create a coupon"
+          }
+        },
+        {
+          "name": "GET /admin/coupons/{id} — Get a coupon",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/coupons/{{id}}",
+            "description": "Get a coupon"
+          }
+        },
+        {
+          "name": "PATCH /admin/coupons/{id} — Update a coupon",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/coupons/{{id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated demo value\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update a coupon"
+          }
+        },
+        {
+          "name": "DELETE /admin/coupons/{id} — Deactivate a coupon",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/coupons/{{id}}",
+            "description": "Deactivate a coupon"
+          }
+        },
+        {
+          "name": "GET /admin/payments — List payments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/payments?page=1&limit=20",
+            "description": "List payments"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Suppliers",
+      "item": [
+        {
+          "name": "GET /admin/suppliers — List suppliers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers?page=1&limit=20",
+            "description": "List suppliers"
+          }
+        },
+        {
+          "name": "POST /admin/suppliers — Create a supplier connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo User\",\n  \"code\": \"mock-supplier\",\n  \"description\": \"Demo description\",\n  \"adapterType\": \"mock\",\n  \"baseUrl\": \"https://example.com/image.jpg\",\n  \"allowedHosts\": [\n    \"string\"\n  ],\n  \"credentials\": {},\n  \"config\": {},\n  \"capabilities\": {\n    \"catalogue\": true,\n    \"pricing\": true,\n    \"inventory\": true,\n    \"orderPlacement\": true,\n    \"orderStatus\": true,\n    \"tracking\": true,\n    \"cancellation\": true,\n    \"returns\": true,\n    \"cod\": true,\n    \"serviceability\": true\n  },\n  \"markupRule\": {\n    \"type\": \"percent\",\n    \"value\": 35,\n    \"minMarginPercent\": 0\n  },\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Credentials are encrypted with AES-256-GCM and never returned. The generic_rest adapter requires a documented base URL and allowlisted hosts; no endpoints are invented."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body?.data?.supplier?._id) pm.collectionVariables.set('supplierId', body.data.supplier._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /admin/suppliers/{id} — Get a supplier",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}",
+            "description": "Get a supplier"
+          }
+        },
+        {
+          "name": "PATCH /admin/suppliers/{id} — Update supplier configuration",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated demo value\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update supplier configuration"
+          }
+        },
+        {
+          "name": "DELETE /admin/suppliers/{id} — Deactivate a supplier",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}",
+            "description": "Deactivate a supplier"
+          }
+        },
+        {
+          "name": "PUT /admin/suppliers/{id}/credentials — Store supplier credentials (encrypted)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}/credentials",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"credentials\": {\n    \"apiKey\": \"replace-with-supplier-api-key\",\n    \"apiSecret\": \"replace-with-supplier-api-secret\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Store supplier credentials (encrypted)"
+          }
+        },
+        {
+          "name": "DELETE /admin/suppliers/{id}/credentials — Remove stored supplier credentials",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}/credentials",
+            "description": "Remove stored supplier credentials"
+          }
+        },
+        {
+          "name": "POST /admin/suppliers/{id}/test-connection — Test the supplier connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}/test-connection",
+            "description": "Test the supplier connection"
+          }
+        },
+        {
+          "name": "GET /admin/suppliers/{id}/capabilities — Get supplier capabilities",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}/capabilities",
+            "description": "Get supplier capabilities"
+          }
+        },
+        {
+          "name": "GET /admin/suppliers/{id}/logs — List sync logs for a supplier",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}/logs?page=1&limit=20",
+            "description": "List sync logs for a supplier"
+          }
+        },
+        {
+          "name": "PUT /admin/suppliers/{id}/markup — Update markup and reprice products",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}/markup",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"percent\",\n  \"value\": 35,\n  \"minMarginPercent\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update markup and reprice products"
+          }
+        },
+        {
+          "name": "POST /admin/suppliers/{id}/sync/catalogue — Import or update the supplier catalogue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}/sync/catalogue",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maxPages\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Import or update the supplier catalogue"
+          }
+        },
+        {
+          "name": "POST /admin/suppliers/{id}/sync/inventory — Sync supplier inventory",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}/sync/inventory",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"markMissingUnavailable\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Sync supplier inventory"
+          }
+        },
+        {
+          "name": "POST /admin/suppliers/{id}/sync/stale-scan — Mark stale products unavailable",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/suppliers/{{id}}/sync/stale-scan",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hours\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mark stale products unavailable"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Supplier orders",
+      "item": [
+        {
+          "name": "GET /admin/supplier-orders — List supplier orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/supplier-orders?page=1&limit=20",
+            "description": "List supplier orders"
+          }
+        },
+        {
+          "name": "GET /admin/supplier-orders/stats — Supplier order counts by status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/supplier-orders/stats",
+            "description": "Supplier order counts by status"
+          }
+        },
+        {
+          "name": "POST /admin/supplier-orders/retry-due — Retry all supplier orders that are due",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/supplier-orders/retry-due",
+            "description": "Retry all supplier orders that are due"
+          }
+        },
+        {
+          "name": "GET /admin/supplier-orders/{id} — Get a supplier order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/supplier-orders/{{id}}",
+            "description": "Get a supplier order"
+          }
+        },
+        {
+          "name": "POST /admin/supplier-orders/{id}/retry — Retry forwarding a supplier order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/supplier-orders/{{id}}/retry",
+            "description": "Idempotent: the same supplier order is never duplicated at the supplier."
+          }
+        },
+        {
+          "name": "POST /admin/supplier-orders/{id}/sync — Sync supplier status and tracking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/supplier-orders/{{id}}/sync",
+            "description": "Sync supplier status and tracking"
+          }
+        },
+        {
+          "name": "POST /admin/supplier-orders/{id}/cancel — Cancel a supplier order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/supplier-orders/{{id}}/cancel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Changed my mind\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Cancel a supplier order"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Inventory",
+      "item": [
+        {
+          "name": "GET /admin/inventory — List inventory",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/inventory?page=1&limit=20&threshold=5",
+            "description": "List inventory"
+          }
+        },
+        {
+          "name": "GET /admin/inventory/transactions — List the stock ledger",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/inventory/transactions?page=1&limit=20",
+            "description": "List the stock ledger"
+          }
+        },
+        {
+          "name": "PATCH /admin/inventory/{productId}/variants/{sku} — Adjust variant stock",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/inventory/{{productId}}/variants/{{sku}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 25,\n  \"note\": \"Cycle count adjustment\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Provide exactly one of `stock` (set) or `adjustment` (delta). Reserved stock is never reduced."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Uploads",
+      "item": [
+        {
+          "name": "GET /admin/uploads/config — Get upload configuration",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/uploads/config",
+            "description": "Get upload configuration"
+          }
+        },
+        {
+          "name": "POST /admin/uploads/image — Upload one image to Cloudinary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/uploads/image",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select a local image file"
+                },
+                {
+                  "key": "folder",
+                  "type": "text",
+                  "src": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Upload one image to Cloudinary"
+          }
+        },
+        {
+          "name": "DELETE /admin/uploads/image — Delete an uploaded image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/uploads/image",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"publicId\": \"highflier/demo/sample\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Delete an uploaded image"
+          }
+        },
+        {
+          "name": "POST /admin/uploads/images — Upload up to 5 images to Cloudinary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/uploads/images",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "",
+                  "description": ""
+                },
+                {
+                  "key": "folder",
+                  "type": "text",
+                  "src": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Upload up to 5 images to Cloudinary"
+          }
+        }
+      ]
+    }
+  ]
+}

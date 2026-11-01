@@ -1,0 +1,48 @@
+{
+  "name": "highflier-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HIGHFLIER - supplier-fulfilled multi-category e-commerce backend (India)",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node --import ./scripts/dns-bootstrap.js server.js",
+    "dev": "node --import ./scripts/dns-bootstrap.js --watch server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "seed:admin": "node --import ./scripts/dns-bootstrap.js scripts/seedAdmin.js",
+    "seed:demo": "node --import ./scripts/dns-bootstrap.js scripts/seedDemo.js",
+    "docs:check": "node scripts/checkOpenApi.js",
+    "postman:generate": "node scripts/generatePostman.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.5.1",
+    "compression": "^1.8.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "multer": "^2.0.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.10.0",
+    "pino": "^9.6.0",
+    "pino-http": "^10.4.0",
+    "razorpay": "^2.9.5",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.1.4",
+    "supertest": "^7.0.0",
+    "vitest": "^3.0.5"
+  }
+}

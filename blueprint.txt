@@ -1,0 +1,464 @@
+                  HIGHFLIER
+
+                                            E-Commerce Backend Blueprint
+                                                     + AI Master Prompt
+
+          Project: Indian multi-category e-commerce / supplier-fulfilled dropshipping platform
+   Development approach: Backend first · Supplier API integration · API testing · Frontend later
+
+A practical project specification based on our planning discussion. Use the master prompt in this PDF with your coding
+AI, then return here and build the system one milestone at a time.
+
+Important principle: HIGHFLIER owns the customer-facing shopping experience. An authorized supplier
+provides catalogue/stock data and fulfils orders directly to the customer, where the supplier's agreement and
+APIs support this workflow.
+
+HIGHFLIER | Backend Blueprint & AI Master Prompt  Page 1
+1. Project vision
+
+HIGHFLIER will be an independent Indian e-commerce storefront. Customers browse products, add them to cart,
+checkout and pay on HIGHFLIER. Products may be sourced from one or more Indian suppliers. When a supplier
+officially supports the required API or approved feed, HIGHFLIER can sync product data and stock, submit eligible
+orders to that supplier, and sync shipment tracking back to the customer account.
+This is a supplier-fulfilled / dropshipping-style model. It is not simply copying another website.
+
+Core customer journey
+
+1 Supplier shares product catalogue through an authorized API, product feed, or approved integration.
+2 HIGHFLIER imports mapped product data: supplier SKU/ID, title, description, images, price, stock and category.
+3 HIGHFLIER applies its own selling-price rules and displays products on its storefront.
+4 Customer places an order and completes payment (or selects COD only if the fulfilment arrangement supports it).
+5 Backend verifies payment, validates current price and stock, records the order, and submits it to the supplier.
+6 Supplier accepts the order, packs and dispatches it, and returns tracking/status information.
+7 HIGHFLIER updates the customer's order page and sends appropriate notifications.
+Business margin example: Supplier cost s500; HIGHFLIER selling price s799; indicative gross difference s299.
+This is not net profit: shipping, payment fees, GST/tax, returns, RTO, discounts and other costs must be
+accounted for.
+
+2. Fixed project decisions
+
+Item             Decision
+Project name     HIGHFLIER
+Market           India
+Store type       Multi-category e-commerce
+Complexity       Advanced learning / portfolio project
+Database         MongoDB
+Backend          Node.js + Express.js
+ODM              Mongoose
+Language         JavaScript with ES Modules
+Authentication   JWT access/refresh tokens + bcryptjs
+Validation       Zod
+Payments         Razorpay integration (test mode first)
+Images           Cloudinary, subject to supplier image permissions
+API testing      Postman
+Frontend later   React + Vite + Tailwind CSS
+Version control  Git + GitHub
+
+3. Supplier integration: the most important requirement
+
+HIGHFLIER | Backend Blueprint & AI Master Prompt                    Page 2
+HIGHFLIER must not depend on scraping or copying a supplier website without permission. A URL alone is not
+enough to import products or place orders. The supplier must provide an authorized API, documented product
+feed, approved integration, or written permission and technical method for catalogue and fulfilment operations.
+
+Supplier capability checklist
+
+q Product catalogue API/feed: product ID, SKU, title, description, category, images, variants and attributes.
+q Pricing API/feed: supplier cost, currency, price changes and any applicable fees.
+q Inventory API/feed: available stock and last-updated time.
+q Order placement API: create an order with customer shipping details and supplier SKU/variant.
+q Order status API or webhook: accepted, processing, shipped, delivered, cancelled, etc.
+q Tracking API/webhook: courier, tracking number and tracking URL.
+q Returns/cancellation/refund policy and API support, if available.
+q India delivery coverage, PIN-code serviceability, shipping fees and estimated delivery.
+q Dropshipping / blind-shipping / white-label packaging terms, if HIGHFLIER branding is desired.
+q Commercial terms: supplier cost, settlement, GST invoices, COD availability, RTO and return liability.
+
+Supplier onboarding strategy
+
+Build a supplier-agnostic integration layer. Start with one supplier that explicitly supports custom-website API access.
+Add further suppliers only after the first integration works end-to-end. Potential research leads mentioned in planning
+include FreshOn (grocery-focused partner API), Qikink (print-on-demand/apparel fulfilment) and Shiprocket
+(shipping/logistics, not a general product supplier). Their current API access, eligibility and commercial terms must be
+checked directly; do not assume they offer a universal multi-category catalogue.
+
+Supplier adapter design
+
+Create a common adapter contract with methods such as testConnection(), fetchProducts(), fetchInventory(),
+createSupplierOrder(), getOrderStatus(), getTrackingDetails() and cancelSupplierOrder(). Each supplier gets its own
+adapter implementation. Do not assume all suppliers expose the same endpoints or payload formats.
+
+4. Main features and user roles
+
+Customer features
+
+q Register, login, logout, email verification and password reset.
+q Browse categories, brands and product detail pages.
+q Search, filter, sort and paginate products.
+q Cart, wishlist and multiple delivery addresses.
+q Coupon validation and checkout.
+q Online payment; COD only where supplier and business operations support it.
+q Order history, order tracking, eligible cancellation and return requests.
+q Reviews and ratings, with verified-purchase checks.
+
+Admin features
+
+q Secure admin login and role-based permissions.
+q Supplier connection setup, API credential management and connection test.
+q Product import, review/approval, mapping and activation.
+q Automatic/manual catalogue and inventory sync controls.
+
+HIGHFLIER | Backend Blueprint & AI Master Prompt  Page 3
+q Markup/pricing rules and product availability controls.
+q Orders, supplier orders, failed submissions and retry monitoring.
+q Shipment tracking, returns, refunds, coupons and sales reports.
+q Sync logs, webhook logs, audit history and integration health.
+
+5. Backend architecture and folder structure
+
+Use a modular layered architecture: routes  middleware  controllers  services  Mongoose models/database.
+Keep business logic out of route files. Use centralized error handling and consistent API response formats.
+
+             backend/ src/ config/ # database, cloudinary, razorpay models/ # User, Product, Supplier,
+             Order, etc. modules/ auth/ users/ products/ categories/ brands/ cart/ wishlist/ orders/
+             payments/ coupons/ reviews/ suppliers/ adapters/ supplier.controller.js supplier.service.js
+             supplierSync.service.js inventory/ admin/ middleware/ # auth, roles, validation, errors, rate
+             limits validators/ # Zod schemas jobs/ # product, stock, order-status sync jobs utils/
+             constants/ app.js tests/ .env .env.example .gitignore package.json server.js
+
+6. MongoDB collections and data model plan
+
+Collection             Purpose / key fields
+users                  name, email (unique), passwordHash, role, phone, addresses, isActive
+sessions               user, refreshTokenHash, expiresAt (TTL index)
+products               supplier, supplierProductId, supplierSku, title, slug, category, brand, images, variants, supplierCost, sellingPrice, stock, isA
+categories             name, slug, parentCategory, image, isActive
+brands                 name, slug, logo, isActive
+carts                  user (unique), items [{ product, variantSku, quantity }]
+wishlists              user (unique), products
+orders                 orderNumber, user, immutable item snapshots, shippingAddress snapshot, subtotal, discount, shippingFee, total, paymen
+payments               order, provider, providerOrderId, providerPaymentId, amount, currency, status, verification data
+suppliers              name, code, base URL, adapterType, encrypted credentials reference, capabilities, status
+supplierOrders         order, supplier, supplierOrderId, status, tracking details, supplierCost, request/response references
+coupons                code, discountType, discountValue, minOrder, maxDiscount, limits, expiry, active
+reviews                user, product, order, rating, comment, verifiedPurchase
+inventoryTransactions  product, variant, type, quantity, previousStock, newStock, reference
+
+Data modelling rules
+
+q Use ObjectId references for products, suppliers, categories, users and related records where appropriate.
+q Embed addresses in users for address management, and copy the selected shipping address into each order as
+
+     an immutable snapshot.
+q Embed order item snapshots (name, SKU, image reference, quantity, unit price) so old orders remain accurate
+
+     when catalogue data changes.
+q Use a unique supplier + supplierProductId (or supplier SKU) constraint to prevent duplicate imports.
+q Use unique indexes for email, product slug, category slug, brand slug and order number.
+
+HIGHFLIER | Backend Blueprint & AI Master Prompt                     Page 4
+q Use compound indexes for category/active products and user order history; add text search indexes or a
+     dedicated search service only when needed.
+
+q Use transactions for stock reservation/order creation where supported by MongoDB replica-set deployment.
+     Design safe compensation/retry logic.
+
+7. API route plan
+
+Module           Base route / examples
+Auth             /api/v1/auth -- register, login, refresh, logout, me, forgot/reset password
+Users            /api/v1/users -- profile, addresses
+Products         /api/v1/products -- list, details, search, filters; admin import/activate/update
+Categories       /api/v1/categories
+Brands           /api/v1/brands
+Cart             /api/v1/cart -- get, add, update, remove
+Wishlist         /api/v1/wishlist
+Orders           /api/v1/orders -- create, list mine, details, cancel/return request
+Payments         /api/v1/payments -- create payment order, verify, webhook
+Coupons          /api/v1/coupons -- validate; admin CRUD
+Reviews          /api/v1/reviews
+Suppliers        /api/v1/admin/suppliers -- connect, test, sync, logs, capabilities
+Supplier orders  /api/v1/admin/supplier-orders -- list, retry eligible failed submission, tracking
+Admin            /api/v1/admin -- dashboard, users, products, orders, reports
+
+8. Critical order, payment and inventory rules
+
+1 Never trust product price, discount, stock, shipping fee or coupon totals sent by the browser. Recalculate on the
+     backend.
+
+2 For online payment, create the payment order server-side and verify the provider signature/payment status
+     server-side. Use verified webhooks and idempotency.
+
+3 Do not mark an order as paid based only on a frontend success page.
+
+4 Reserve or decrement inventory safely. Prevent overselling with atomic conditional updates or transactions, and
+     define reservation expiry/rollback.
+
+5 Only submit supplier orders according to the agreed payment/fulfilment policy. Record the supplier request and
+     response safely.
+
+6 Use an idempotency key or unique external reference for supplier order submission. Retry transient failures
+     without creating duplicate supplier orders.
+
+7 Keep customer order status and supplier fulfilment status separate, then map them through explicit allowed state
+     transitions.
+
+8 If supplier submission fails after customer payment, keep the paid order visible, mark fulfilment as action-required,
+     retry safely and alert admin. Define cancellation/refund handling.
+
+HIGHFLIER | Backend Blueprint & AI Master Prompt                                                            Page 5
+9 COD must only be enabled if supplier supports COD collection and settlement for the relevant service area.
+     Account for RTO and return charges.
+
+10 Never log raw API keys, passwords, full payment secrets or unnecessary personal data.
+
+9. Security, compliance and reliability
+
+q Hash passwords with bcryptjs and use secure JWT access/refresh token handling.
+q Keep supplier API keys and payment secrets server-side; encrypt credentials at rest and restrict admin access.
+q Validate supplier base URLs against approved HTTPS domains to prevent SSRF. Do not let arbitrary users
+
+     submit URLs for backend fetching.
+q Use Helmet, CORS allowlists, rate limiting, request validation, safe error messages and structured logging.
+q Verify webhook signatures; deduplicate webhook events and supplier callbacks.
+q Use pagination and query limits; validate ObjectIds and prevent mass assignment.
+q Use audit logs for supplier connection changes, pricing rules, refunds and admin actions.
+q Confirm supplier permission for product text/images, resale, pricing, branding, customer-data transfer and
+
+     fulfilment.
+q Plan Indian GST invoicing, consumer disclosures, privacy/data handling, refunds, returns and applicable legal/tax
+
+     advice before launch.
+
+10. Development phases and acceptance criteria
+
+Phase  Build                                      Done when
+
+1      Foundation                                 Express starts, MongoDB connects, health route works, config and errors are safe.
+
+2      Auth and roles                             Register/login/refresh/logout work; customer cannot access admin routes.
+
+3      Supplier framework                         Supplier model, encrypted credentials, adapter contract and test connection work.
+
+4      Catalogue import                           A real authorized supplier feed/API imports products without duplicates.
+
+5      Inventory and pricing                      Stock/price sync works; stale or unavailable products are handled safely.
+
+6      Cart and wishlist                          Authenticated customer can manage cart and wishlist; backend recalculates prices.
+
+7      Checkout and orders                        Address, totals, stock reservation and order snapshots work.
+
+8      Payments                                   Test payment, signature verification, webhook and idempotency work.
+
+9      Supplier fulfilment                        A test order is accepted by supplier API; tracking/status sync works.
+
+10     Admin and observability                    Admin can inspect imports, sync failures, orders, supplier orders and logs.
+
+11     Testing and deployment                     Integration tests, security checks, backups and deployment documented.
+
+12     Frontend                                   React storefront and admin dashboard connect to tested APIs.
+
+Do not start the full frontend until the core backend flows are tested. Use a supplier sandbox/test environment
+first. If no supplier API credentials are available, use a clearly labelled mock adapter for development; do not
+pretend mock orders are real supplier orders.
+
+HIGHFLIER | Backend Blueprint & AI Master Prompt                                                                               Page 6
+11. Copy-ready AI master prompt
+
+Copy the prompt below into your coding AI. Give it access to your project folder/repository if appropriate. Ask it to work
+milestone by milestone, not generate the whole application in one response.
+
+  You are a senior backend engineer and technical mentor. Help me build HIGHFLIER, an advanced
+  India-focused multi-category e-commerce platform with supplier-fulfilled / dropshipping-style fulfilment.
+
+PROJECT GOAL
+Build an independent customer-facing e-commerce website. Customers must browse products, add to cart,
+checkout and pay on HIGHFLIER. Products and stock should be imported/synchronized from an Indian supplier
+ONLY through an authorized, documented API, approved product feed or other supplier-approved integration.
+After a valid order and payment/fulfilment checks, HIGHFLIER should submit the order to the supplier's
+official order API. The supplier should ship directly to the customer where the supplier agreement
+supports it. Tracking/status should sync back to HIGHFLIER.
+
+IMPORTANT REALITY CHECK
+A supplier website URL alone does not grant permission or technical ability to import products or place
+orders. Do not scrape websites, bypass protections, copy copyrighted product images, or invent API
+endpoints. First verify that the supplier offers an official API/feed and that custom website
+integration, resale, image usage, direct shipping, COD, returns and branding are permitted. If
+credentials/docs are not available, build a mock supplier adapter clearly labelled as mock and keep the
+real integration blocked until official documentation and credentials are supplied. Never claim an order
+was actually placed with a supplier unless the real API confirms it.
+
+FIXED STACK                                                 permit
+- Node.js + Express.js
+- JavaScript with ES Modules
+- MongoDB + Mongoose
+- bcryptjs for password hashing
+- JWT access and refresh token strategy
+- Zod for request validation
+- Razorpay for Indian online payments (test mode first)
+- Cloudinary for images only where rights and upload rules
+- Postman for API testing
+- Git/GitHub
+- Frontend later: React + Vite + Tailwind CSS
+
+BUSINESS MODEL
+- India-first, INR currency.
+- Multi-category catalogue: electronics, fashion, home/living, beauty, sports, grocery and accessories;
+actual categories depend on supplier availability.
+- Supplier-agnostic architecture with adapters. Start with ONE supplier and add others later.
+- Admin controls supplier connections, imports, pricing/markup rules, product activation, stock sync,
+supplier orders and sync logs.
+- Customers shop and pay on HIGHFLIER, not by being redirected to supplier checkout.
+- Supplier fulfils and ships directly where contract/API supports it.
+- COD is allowed only when supplier and fulfilment arrangements explicitly support COD collection,
+settlement and RTO handling.
+
+ARCHITECTURE
+Use modular layered architecture:
+routes -> middleware -> controllers -> services -> Mongoose models.
+Keep controllers thin. Put business logic in services. Add centralized error handling, request
+validation, structured logging, configuration management and tests.
+Suggested modules:
+auth, users, products, categories, brands, cart, wishlist, orders, payments, coupons, reviews, suppliers,
+inventory, admin.
+Supplier module includes a common adapter contract and supplier-specific adapters. Contract methods
+should cover testConnection, fetchProducts, fetchInventory, createSupplierOrder, getOrderStatus,
+getTrackingDetails and cancelSupplierOrder where supported. Do not assume every supplier supports every
+method.
+
+DATA MODELS / COLLECTIONS
+Plan and implement:
+1. User: name, unique normalized email, passwordHash, role (customer/admin), phone, addresses,
+verification/active flags, timestamps.
+2. Session: user, hashed refresh token, expiry/TTL.
+3. Product: supplier reference, supplierProductId, supplierSku, title, slug, description, category,
+brand, images, variants, supplierCost, sellingPrice, stock, currency INR, active/imported flags,
+lastSyncedAt.
+4. Category: name, unique slug, parentCategory, image, active.
+5. Brand: name, unique slug, logo, active.
+
+HIGHFLIER | Backend Blueprint & AI Master Prompt                                                     Page 7
+6. Cart: unique user, items with product reference, variant SKU and quantity.
+7. Wishlist: unique user, product references.
+8. Order: unique orderNumber, user, immutable item snapshots (name/SKU/image/quantity/unit price),
+shipping-address snapshot, subtotal, discount, shipping, total, coupon, payment status, customer order
+status and timestamps.
+9. Payment: order, user, provider, provider order/payment IDs, amount, INR, status, verification details.
+10. Supplier: name, code, approved HTTPS API base URL, adapter type, encrypted credentials or secure
+secret reference, capabilities, active status and last sync.
+11. SupplierOrder: HIGHFLIER order, supplier, supplierOrderId, external idempotency reference, supplier
+fulfilment status, tracking data, supplier cost, safe request/response references and timestamps.
+12. Coupon: code, discount type/value, minimum order, maximum discount, limits, expiry, active.
+13. Review: user, product, order, rating, comment and verified-purchase flag.
+14. InventoryTransaction: product/variant, movement type, quantity, previous/new stock, reference and
+timestamp.
+
+Use ObjectId references where appropriate and embedded snapshots where historical correctness matters.
+Add unique/compound indexes, including supplier + supplierProductId uniqueness and safe optional
+payment-ID indexing. Explain indexes and schema choices before coding.
+
+API VERSIONING
+Use /api/v1. Plan routes for auth, users, products, categories, brands, cart, wishlist, orders, payments,
+coupons, reviews, admin suppliers, supplier orders and dashboard. Document each endpoint with method,
+auth role, validation, request example, response example, status codes and error cases.
+
+SECURITY AND BUSINESS RULES
+- Never trust frontend prices, totals, discounts, stock or payment status. Recalculate on server.
+- Hash passwords; never return password hashes.
+- Protect admin routes with role checks. Public signup must never allow users to self-assign admin.
+- Keep supplier/payment secrets server-side; encrypt at rest and never log them.
+- Validate supplier URLs against approved HTTPS hosts to prevent SSRF. Do not fetch arbitrary
+user-provided URLs.
+- Use Helmet, CORS allowlist, rate limits, Zod validation, safe errors, pagination and audit logs.
+- Verify Razorpay signatures and webhooks server-side; deduplicate webhook events.
+- Use idempotency keys for supplier order submissions and payment processing.
+- Use atomic stock reservation/decrement and MongoDB transactions where available. Explain replica-set
+requirement and fallback/compensation strategy.
+- Model allowed order status transitions explicitly.
+- If supplier submission fails after payment, preserve the paid order, mark fulfilment action-required,
+retry safely and alert admin. Never create duplicate supplier orders.
+- Handle stale inventory, supplier price changes, supplier stockouts, cancellations, returns, refunds,
+RTO and tracking failures.
+- Do not enable COD unless supplier capabilities and commercial terms support it.
+- Respect supplier permissions for catalogue data, images, resale, customer-data transfer and direct
+fulfilment.
+- Consider India-specific GST/invoice, privacy, consumer protection, returns and refund requirements;
+flag where professional legal/tax review is required.
+
+WORKING STYLE -- VERY IMPORTANT
+1. Do not generate the entire backend at once.
+2. Work ONE milestone at a time and wait for my approval before moving to the next milestone.
+3. Start by inspecting my existing repository and report what exists. Do not overwrite files blindly.
+4. First provide a concise architecture plan and the exact files to create/change.
+5. Then implement only the current milestone.
+6. Explain each file and important code section in beginner-friendly Hinglish/English.
+7. Give exact terminal commands for Windows PowerShell.
+8. Provide .env.example with placeholders only. Never ask me to paste real API secrets into chat or commit
+them.
+9. After implementation, run available tests/lint checks and show actual results. Do not claim tests
+passed if they were not run.
+10. Provide Postman requests/examples and manual test steps.
+11. Include success cases, validation failures, unauthorized access and edge cases.
+12. If a requirement depends on supplier API documentation or credentials, stop and ask for the relevant
+non-secret documentation. Do not invent endpoints, fields or payloads.
+13. Keep a checklist of completed and pending milestones.
+14. Use readable, maintainable code and avoid unnecessary complexity.
+15. Do not begin React frontend until backend milestones and core end-to-end flows are tested.
+
+MILESTONES
+M1: Inspect repo, initialize backend, ES modules, Express app, MongoDB connection, env validation, health
+route, centralized errors.
+M2: User model, authentication, password hashing, JWT access/refresh, sessions, roles and tests.
+M3: Supplier framework, secure credential handling, adapter interface and mock adapter.
+M4: Real supplier API integration only after official docs and test credentials are available; product
+
+HIGHFLIER | Backend Blueprint & AI Master Prompt  Page 8
+  import and deduplication.
+  M5: Product/category/brand APIs, pricing rules, inventory sync and stale-stock handling.
+  M6: Cart and wishlist.
+  M7: Checkout, address validation, order creation and stock reservation.
+  M8: Razorpay test integration, payment verification, webhook idempotency.
+  M9: Supplier order forwarding, retry queue, supplier status and tracking sync.
+  M10: Admin APIs, audit logs, sync dashboard and reports.
+  M11: Integration/security tests, deployment readiness, backups and documentation.
+  M12: Only then build React + Vite + Tailwind storefront and admin dashboard.
+
+  FIRST TASK
+  Begin with M1 only. Inspect the project folder/repository first. Tell me what you found, propose the exact
+  M1 file structure, then implement M1. Do not start M2 until I confirm M1 works locally.
+
+  Your role is both senior engineer and patient mentor. Help me understand and build HIGHFLIER step by step,
+  with real tested functionality rather than fake/demo claims.
+
+12. How to work with ChatGPT after the AI builds each step
+
+Use this process with me after each milestone:
+1 Share the AI's summary, changed-file list and any terminal/test output (remove secrets first).
+2 Tell me what you ran and what worked or failed.
+3 I will review the implementation, explain the code and help debug issues.
+4 We will test the milestone with concrete API requests before moving on.
+5 Only after the milestone is verified will we start the next one.
+
+Suggested message to send after M1
+
+"HIGHFLIER M1 is implemented. Here is the folder structure, code summary, terminal output and Postman
+health-check result. Please review it, explain what each part does, identify problems and tell me the exact next
+step. Do not jump to M2 until M1 is verified."
+
+13. Immediate next steps
+
+q Create a local HIGHFLIER Git repository and backend folder.
+q Give the AI master prompt above to your coding AI.
+q Ask it to inspect the existing folder and implement M1 only.
+q Run the server and verify the health endpoint and MongoDB connection.
+q Return here with the output so we can review it together.
+
+Final reminder
+
+A reliable supplier integration is the key dependency for the business model. Build the platform architecture
+now, but do not promise automatic product import or supplier delivery until a real supplier has approved the
+integration and supplied working documentation/credentials. Start with a mock adapter for development, then
+replace it with a verified live adapter.
+
+HIGHFLIER | Backend Blueprint & AI Master Prompt  Page 9
+

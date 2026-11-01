@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Environment files (never commit real secrets)
+.env
+.env.*
+!.env.example
+
+# Logs / coverage
+*.log
+logs/
+coverage/
+.vitest/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Local uploads / temp
+uploads/
+tmp/
+dist/
